@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_gt_compras_root"
+              name="Compras FEL GT"
+              sequence="82"/>
+
+    <menuitem id="menu_gt_polizas"
+              name="Pólizas de Compras"
+              parent="menu_gt_compras_root"
+              action="action_gt_poliza_compra"
+              sequence="10"/>
+
+    <menuitem id="menu_gt_config"
+              name="Configuración"
+              parent="menu_gt_compras_root"
+              sequence="90"/>
+
+    <menuitem id="menu_gt_config_cuentas"
+              name="Cuentas Contables GT"
+              parent="menu_gt_config"
+              action="action_gt_compras_config"
+              sequence="10"/>
+</odoo>

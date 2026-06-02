@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ══════════════════════════════════════════════════════════════
+         Vista Formulario: Póliza de Compras
+    ══════════════════════════════════════════════════════════════ -->
+    <record id="view_gt_poliza_compra_form" model="ir.ui.view">
+        <field name="name">gt.poliza.compra.form</field>
+        <field name="model">gt.poliza.compra</field>
+        <field name="arch" type="xml">
+            <form string="Póliza de Compras FEL">
+                <header>
+                    <button name="action_cargar_xml" string="Cargar XML / ZIP del SAT"
+                            type="object" class="btn-primary"
+                            invisible="state != 'borrador'"/>
+                    <button name="action_confirmar" string="Confirmar Póliza"
+                            type="object" class="btn-success"
+                            invisible="state != 'borrador'"/>
+                    <button name="action_imprimir_libro_compras"
+                            string="Libro de Compras"
+                            type="object" icon="fa-print"
+                            invisible="state == 'borrador'"/>
+                    <button name="action_cancelar" string="Cancelar"
+                            type="object"
+                            invisible="state != 'confirmado'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="borrador,confirmado"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_ver_asientos" type="object"
+                                class="oe_stat_button" icon="fa-pencil-square-o"
+                                invisible="move_count == 0">
+                            <field name="move_count" widget="statinfo"
+                                   string="Asientos"/>
+                        </button>
+                    </div>
+
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+
+                    <group>
+                        <group string="Información General">
+                            <field name="fecha"/>
+                            <field name="periodo_mes"/>
+                            <field name="periodo_anio"/>
+                            <field name="journal_id"/>
+                            <field name="company_id"
+                                   groups="base.group_multi_company"/>
+                        </group>
+                        <group string="Resumen">
+                            <field name="linea_count" readonly="1"/>
+                            <field name="gran_total" readonly="1"/>
+                            <field name="total_iva" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <!-- Tabla de facturas -->
+                    <notebook>
+                        <page string="Facturas / Documentos">
+                            <field name="linea_ids"
+                                   readonly="state == 'confirmado'"
+                                   widget="one2many">
+                                <list editable="bottom"
+                                      decoration-danger="es_anulada"
+                                      decoration-warning="es_nota_credito"
+                                      decoration-muted="es_exenta"
+                                      decoration-info="es_pequeno_contribuyente">
+                                    <field name="fecha" optional="show"/>
+                                    <field name="tipo_documento" optional="show"/>
+                                    <field name="serie" optional="show"/>
+                                    <field name="numero_documento" optional="show"/>
+                                    <field name="nit_emisor" optional="show"/>
+                                    <field name="nombre_emisor" optional="show"/>
+                                    <field name="bien_o_servicio" optional="show"/>
+                                    <field name="monto_bienes" optional="show"/>
+                                    <field name="monto_servicios" optional="show"/>
+                                    <field name="monto_combustible" optional="show"/>
+                                    <field name="monto_pequeno_contribuyente"
+                                           optional="hide"/>
+                                    <field name="monto_exento" optional="hide"/>
+                                    <field name="monto_iva" optional="show"/>
+                                    <field name="monto_idp" optional="hide"/>
+                                    <field name="gran_total" optional="show"/>
+                                    <field name="cuenta_gasto_id" optional="show"/>
+                                    <field name="tiene_idp" optional="hide"/>
+                                    <field name="es_anulada" invisible="1"/>
+                                    <field name="es_nota_credito" invisible="1"/>
+                                    <field name="es_exenta" invisible="1"/>
+                                    <field name="es_pequeno_contribuyente"
+                                           invisible="1"/>
+                                    <field name="currency_id" invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+
+                        <page string="Totales Libro de Compras">
+                            <group>
+                                <group string="Desglose por Tipo">
+                                    <field name="total_bienes" readonly="1"/>
+                                    <field name="total_servicios" readonly="1"/>
+                                    <field name="total_combustible" readonly="1"/>
+                                    <field name="total_pequeno_contribuyente"
+                                           readonly="1"/>
+                                    <field name="total_exentas" readonly="1"/>
+                                </group>
+                                <group string="Impuestos y Total">
+                                    <field name="total_iva" readonly="1"/>
+                                    <field name="total_idp" readonly="1"/>
+                                    <field name="gran_total" readonly="1"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+
+                    <field name="notas"
+                           placeholder="Observaciones sobre esta póliza..."/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista Lista -->
+    <record id="view_gt_poliza_compra_list" model="ir.ui.view">
+        <field name="name">gt.poliza.compra.list</field>
+        <field name="model">gt.poliza.compra</field>
+        <field name="arch" type="xml">
+            <list string="Pólizas de Compras FEL"
+                  decoration-success="state == 'confirmado'"
+                  decoration-muted="state == 'cancelado'">
+                <field name="name"/>
+                <field name="fecha"/>
+                <field name="periodo_mes"/>
+                <field name="periodo_anio"/>
+                <field name="linea_count" string="Facturas"/>
+                <field name="total_bienes"/>
+                <field name="total_servicios"/>
+                <field name="total_combustible"/>
+                <field name="total_iva"/>
+                <field name="gran_total"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'confirmado'"
+                       decoration-muted="state == 'cancelado'"/>
+                <field name="currency_id" invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Vista Búsqueda -->
+    <record id="view_gt_poliza_compra_search" model="ir.ui.view">
+        <field name="name">gt.poliza.compra.search</field>
+        <field name="model">gt.poliza.compra</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Pólizas">
+                <field name="name"/>
+                <field name="periodo_mes"/>
+                <field name="periodo_anio"/>
+                <separator/>
+                <filter string="Borrador" name="borrador"
+                        domain="[('state','=','borrador')]"/>
+                <filter string="Confirmadas" name="confirmado"
+                        domain="[('state','=','confirmado')]"/>
+                <group expand="1" string="Agrupar por">
+                    <filter string="Mes" name="grp_mes"
+                            context="{'group_by': 'periodo_mes'}"/>
+                    <filter string="Año" name="grp_anio"
+                            context="{'group_by': 'periodo_anio'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Vista configuración cuentas -->
+    <record id="view_gt_compras_config_form" model="ir.ui.view">
+        <field name="name">gt.compras.config.form</field>
+        <field name="model">gt.compras.config</field>
+        <field name="arch" type="xml">
+            <form string="Configuración Cuentas GT Compras FEL">
+                <sheet>
+                    <group string="Cuentas Contables">
+                        <field name="company_id"/>
+                        <field name="cuenta_iva_id"/>
+                        <field name="cuenta_proveedores_id"/>
+                        <field name="cuenta_idp_id"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Acciones -->
+    <record id="action_gt_poliza_compra" model="ir.actions.act_window">
+        <field name="name">Pólizas de Compras FEL</field>
+        <field name="res_model">gt.poliza.compra</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_gt_poliza_compra_search"/>
+        <field name="context">{'search_default_confirmado': 0}</field>
+    </record>
+
+    <record id="action_gt_compras_config" model="ir.actions.act_window">
+        <field name="name">Configuración GT Compras FEL</field>
+        <field name="res_model">gt.compras.config</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>
