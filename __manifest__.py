@@ -27,6 +27,11 @@
         'wizard/gt_wizard_carga_xml_views.xml',
         'report/gt_libro_compras_report.xml',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'gt_compras_fel/static/src/css/gt_compras.css',
+        ],
+    },
     'installable': True,
     'application': True,
     'auto_install': False,

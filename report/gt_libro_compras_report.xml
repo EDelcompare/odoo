@@ -87,8 +87,8 @@
                                             </t>
                                         </td>
                                         <td class="text-right">
-                                            <t t-if="linea.monto_exento">
-                                                <t t-esc="'{:,.2f}'.format(linea.monto_exento)"/>
+                                            <t t-if="linea.monto_exento or linea.monto_idp">
+                                                <t t-esc="'{:,.2f}'.format(linea.monto_exento + linea.monto_idp)"/>
                                             </t>
                                         </td>
                                         <td class="text-right">
@@ -97,7 +97,7 @@
                                             </t>
                                         </td>
                                         <td class="text-right">
-                                            <t t-esc="'{:,.2f}'.format(linea.venta_neta)"/>
+                                            <t t-esc="'{:,.2f}'.format(linea.venta_neta + linea.monto_idp)"/>
                                         </td>
                                         <td class="text-right">
                                             <strong>
@@ -124,13 +124,13 @@
                                         <t t-esc="'{:,.2f}'.format(poliza.total_pequeno_contribuyente)"/>
                                     </td>
                                     <td class="text-right">
-                                        <t t-esc="'{:,.2f}'.format(poliza.total_exentas)"/>
+                                        <t t-esc="'{:,.2f}'.format(poliza.total_exentas + poliza.total_idp)"/>
                                     </td>
                                     <td class="text-right">
                                         <t t-esc="'{:,.2f}'.format(poliza.total_iva)"/>
                                     </td>
                                     <td class="text-right">
-                                        <t t-esc="'{:,.2f}'.format(poliza.total_bienes + poliza.total_servicios + poliza.total_combustible + poliza.total_pequeno_contribuyente + poliza.total_exentas)"/>
+                                        <t t-esc="'{:,.2f}'.format(poliza.total_bienes + poliza.total_servicios + poliza.total_combustible + poliza.total_pequeno_contribuyente + poliza.total_exentas + poliza.total_idp)"/>
                                     </td>
                                     <td class="text-right">
                                         <t t-esc="'{:,.2f}'.format(poliza.gran_total)"/>
@@ -166,9 +166,9 @@
                                             <td class="text-right">
                                                 Q <t t-esc="'{:,.2f}'.format(poliza.total_pequeno_contribuyente)"/>
                                             </td></tr>
-                                        <tr><td>Total Exentas</td>
+                                        <tr><td>Total Exentas (incl. IDP)</td>
                                             <td class="text-right">
-                                                Q <t t-esc="'{:,.2f}'.format(poliza.total_exentas)"/>
+                                                Q <t t-esc="'{:,.2f}'.format(poliza.total_exentas + poliza.total_idp)"/>
                                             </td></tr>
                                         <tr style="font-weight:bold;">
                                             <td>Total IVA Crédito Fiscal</td>

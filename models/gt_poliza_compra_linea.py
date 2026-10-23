@@ -12,14 +12,23 @@ TIPOS_DOCUMENTO = [
     ('FACT',         'Factura (FACT)'),
     ('FPEQ',         'Pequeño Contribuyente (FPEQ)'),
     ('RDON',         'Donación / Exento (RDON)'),
-    ('FCAM',         'Nota de Crédito (FCAM)'),
+    ('FCAM',         'Factura Cambiaria (FCAM)'),
     ('NABN',         'Nota de Abono (NABN)'),
+    ('NCRE',         'Nota de Crédito (NCRE)'),
+    ('NDEB',         'Nota de Débito (NDEB)'),
     ('anulada',      'Factura Anulada'),
     ('otro',         'Otro Documento'),
 ]
 
-# Tipos que equivalen a nota de crédito
-TIPOS_NOTA_CREDITO = {'FCAM', 'NABN', 'NCRE', 'NDEB'}
+# FCAM (Factura Cambiaria) es una factura normal de régimen general -
+# solo trae un complemento de abonos/plazos de pago, no reduce el total.
+# NABN (Nota de Abono) es el acuse de un abono a una Factura Cambiaria,
+# no una compra nueva: se deja como 'otro' para revisión manual.
+# Los únicos tipos que realmente son nota de crédito/débito son NCRE y NDEB.
+TIPOS_NOTA_CREDITO = {'NCRE', 'NDEB'}
+
+# Tipos que se contabilizan como factura normal (régimen general)
+TIPOS_FACTURA_NORMAL = {'FACT', 'FPEQ', 'RDON', 'FCAM'}
 
 # Tipo de bien/servicio
 BIEN_O_SERVICIO = [
@@ -218,7 +227,7 @@ class GtPolizaCompraLinea(models.Model):
         Detecta automáticamente: tipo documento, IDP, bien/servicio.
         """
         import xml.etree.ElementTree as ET
-        from datetime import datetime
+        from datetime import datetime, timezone
 
         try:
             root = ET.fromstring(xml_content)
@@ -241,7 +250,7 @@ class GtPolizaCompraLinea(models.Model):
         certificacion    = root.find('.//{%s}Certificacion' % NS_SAT)
         num_autorizacion = root.find('.//{%s}NumeroAutorizacion' % NS_SAT)
 
-        if not datos_generales or not emisor or not num_autorizacion:
+        if datos_generales is None or emisor is None or num_autorizacion is None:
             raise UserError(_(
                 'El XML no contiene los elementos obligatorios de un DTE '
                 '(DatosGenerales, Emisor, NumeroAutorizacion).'))
@@ -250,7 +259,7 @@ class GtPolizaCompraLinea(models.Model):
         tipo_raw = datos_generales.get('Tipo', 'FACT')
         if tipo_raw in TIPOS_NOTA_CREDITO:
             tipo_doc = tipo_raw
-        elif tipo_raw in ('FACT', 'FPEQ', 'RDON'):
+        elif tipo_raw in TIPOS_FACTURA_NORMAL:
             tipo_doc = tipo_raw
         else:
             tipo_doc = 'otro'
@@ -259,15 +268,24 @@ class GtPolizaCompraLinea(models.Model):
         fecha_str = datos_generales.get('FechaHoraEmision', '')
         try:
             fecha_emision = datetime.fromisoformat(fecha_str)
+            if fecha_emision.tzinfo is not None:
+                fecha_emision = fecha_emision.astimezone(timezone.utc).replace(tzinfo=None)
         except Exception:
             fecha_emision = False
 
         # ── Análisis de líneas (items) ────────────────────────────────────────
+        # Cada item se clasifica por separado: si no trae impuesto IVA se
+        # considera exento (igual que se aísla el IDP), en vez de asumir
+        # que toda la factura comparte una sola clasificación.
         tiene_idp        = False
-        monto_idp        = 0.0
         tiene_bienes     = False
         tiene_servicios  = False
         monto_petroleo   = 0.0
+
+        monto_bienes_item      = 0.0
+        monto_servicios_item   = 0.0
+        monto_combustible_item = 0.0
+        monto_exento_item      = 0.0
 
         for item in items:
             bs = item.get('BienOServicio', 'S')
@@ -276,18 +294,53 @@ class GtPolizaCompraLinea(models.Model):
             elif bs == 'S':
                 tiene_servicios = True
 
-            # Detectar IDP (impuesto PETROLEO)
+            try:
+                item_total = float(item.find('{%s}Total' % NS_SAT).text or 0)
+            except (AttributeError, ValueError, TypeError):
+                item_total = 0.0
+
+            item_iva = 0.0
+            item_petroleo = 0.0
+
             for impuesto in item.findall('.//{%s}Impuesto' % NS_SAT):
                 nombre_imp = impuesto.find('{%s}NombreCorto' % NS_SAT)
-                monto_imp  = impuesto.find('{%s}MontoImpuesto' % NS_SAT)
-                if nombre_imp is not None and nombre_imp.text == 'PETROLEO':
-                    tiene_idp = True
-                    try:
-                        monto_petroleo += float(monto_imp.text or 0)
-                    except (ValueError, TypeError):
-                        pass
+                if nombre_imp is None or not nombre_imp.text:
+                    continue
+                monto_imp_el = impuesto.find('{%s}MontoImpuesto' % NS_SAT)
+                try:
+                    monto_imp_val = float(monto_imp_el.text or 0) if monto_imp_el is not None else 0.0
+                except (ValueError, TypeError):
+                    monto_imp_val = 0.0
 
-        # Bien o Servicio de la factura completa
+                if nombre_imp.text == 'IVA':
+                    item_iva += monto_imp_val
+                elif nombre_imp.text == 'PETROLEO':
+                    item_petroleo += monto_imp_val
+                    tiene_idp = True
+                # Cualquier otro impuesto (ej. TURISMO HOSPEDAJE) no tiene
+                # columna propia en el Libro de Compras: se queda dentro de
+                # la base para que la factura no quede descuadrada.
+
+            monto_petroleo += item_petroleo
+
+            if item_petroleo:
+                # Combustible: base sin IVA ni IDP (cualquier otro impuesto
+                # del item se queda incluido en esta base)
+                base_item = round(item_total - item_iva - item_petroleo, 2)
+                monto_combustible_item += base_item
+            elif item_iva:
+                # Bien o servicio gravado con IVA (otros impuestos del item
+                # quedan incluidos en esta base)
+                base_item = round(item_total - item_iva, 2)
+                if bs == 'B':
+                    monto_bienes_item += base_item
+                else:
+                    monto_servicios_item += base_item
+            else:
+                # Sin impuesto IVA en el item: exento
+                monto_exento_item += item_total
+
+        # Bien o Servicio de la factura completa (solo informativo)
         if tiene_bienes and tiene_servicios:
             bien_o_servicio = 'M'
         elif tiene_bienes:
@@ -315,8 +368,6 @@ class GtPolizaCompraLinea(models.Model):
                         pass
 
         # ── Calcular columnas del Libro de Compras ────────────────────────────
-        base_sin_iva = round(gran_total - monto_iva - monto_petroleo, 2)
-
         monto_bienes                = 0.0
         monto_servicios             = 0.0
         monto_combustible           = 0.0
@@ -328,33 +379,25 @@ class GtPolizaCompraLinea(models.Model):
             pass  # Todo en cero
 
         elif tipo_doc == 'FPEQ':
-            # Pequeño contribuyente: sin crédito IVA
+            # Pequeño contribuyente: todo el documento va en una sola
+            # columna, sin crédito de IVA, sin importar el detalle por item.
             monto_pequeno_contribuyente = gran_total
-            iva_credito = 0.0
 
         elif tipo_doc == 'RDON':
-            # Donación / exento
+            # Donación: todo el documento es exento, sin importar el detalle.
             monto_exento = gran_total
-            iva_credito  = 0.0
 
-        elif tiene_idp:
-            # Combustible: va en su propia columna
-            monto_combustible = base_sin_iva
-            iva_credito       = monto_iva
-
-        elif bien_o_servicio == 'B':
-            monto_bienes = base_sin_iva
-            iva_credito  = monto_iva
-
-        elif bien_o_servicio == 'S':
-            monto_servicios = base_sin_iva
-            iva_credito     = monto_iva
-
-        else:  # Mixto
-            # Se distribuye — el usuario puede ajustar
-            monto_bienes    = round(base_sin_iva / 2, 2)
-            monto_servicios = base_sin_iva - monto_bienes
-            iva_credito     = monto_iva
+        else:
+            # Régimen general (FACT, FCAM, otro): clasificación por item,
+            # así una factura mixta reparte cada renglón a su columna real
+            # (bienes / servicios / combustible / exento) en vez de asumir
+            # que toda la factura es de un solo tipo.
+            monto_bienes      = round(monto_bienes_item, 2)
+            monto_servicios   = round(monto_servicios_item, 2)
+            monto_combustible = round(monto_combustible_item, 2)
+            monto_exento      = round(monto_exento_item, 2)
+            if tipo_doc in ('FACT', 'FCAM'):
+                iva_credito = monto_iva
 
         # ── Resultado ─────────────────────────────────────────────────────────
         return {
@@ -389,7 +432,7 @@ class GtPolizaCompraLinea(models.Model):
         self.ensure_one()
         partner = self.env['res.partner'].search([
             ('vat', '=', self.nit_emisor),
-            ('company_type', '=', 'company'),
+            ('is_company', '=', True),
         ], limit=1)
         if not partner:
             partner = self.env['res.partner'].create({
@@ -442,19 +485,21 @@ class GtPolizaCompraLinea(models.Model):
             lineas_asiento.append((0, 0, {
                 'account_id': self.cuenta_gasto_id.id,
                 'name':       self.descripcion_gasto or self.nombre_emisor,
-                'debit':      monto_gasto,
-                'credit':     0.0,
+                'quantity':   1,
+                'price_unit': monto_gasto,
+                'tax_ids':    [(6, 0, [])],
             }))
 
         # Línea IVA por cobrar (solo FACT régimen general)
-        if self.monto_iva and self.tipo_documento == 'FACT':
+        if self.monto_iva and self.tipo_documento in ('FACT', 'FCAM'):
             if not cuenta_iva:
                 raise UserError(_('Configure la cuenta de IVA por Cobrar en Configuración GT.'))
             lineas_asiento.append((0, 0, {
                 'account_id': cuenta_iva.id,
                 'name':       _('IVA por Cobrar - %s') % self.nombre_emisor,
-                'debit':      self.monto_iva,
-                'credit':     0.0,
+                'quantity':   1,
+                'price_unit': self.monto_iva,
+                'tax_ids':    [(6, 0, [])],
             }))
 
         # Línea IDP combustible
@@ -464,8 +509,9 @@ class GtPolizaCompraLinea(models.Model):
             lineas_asiento.append((0, 0, {
                 'account_id': cuenta_idp.id,
                 'name':       _('IDP Combustible - %s') % self.nombre_emisor,
-                'debit':      self.monto_idp,
-                'credit':     0.0,
+                'quantity':   1,
+                'price_unit': self.monto_idp,
+                'tax_ids':    [(6, 0, [])],
             }))
 
         # Línea proveedores (crédito total)
@@ -474,8 +520,7 @@ class GtPolizaCompraLinea(models.Model):
         lineas_asiento.append((0, 0, {
             'account_id': cuenta_proveedores.id,
             'name':       _('Por pagar - %s') % self.nombre_emisor,
-            'debit':      0.0,
-            'credit':     self.gran_total,
+            'balance':    -self.gran_total,
         }))
 
         move_vals = {
@@ -513,8 +558,7 @@ class GtPolizaCompraLinea(models.Model):
                                   ('company_id', '=', self.company_id.id)
                               ], limit=1).id,
                 'name': _('FACTURA ANULADA - %s') % self.nombre_emisor,
-                'debit':  0.0,
-                'credit': 0.0,
+                'balance': 0.0,
             })],
         }
         move = self.env['account.move'].create(move_vals)
@@ -528,6 +572,9 @@ class GtPolizaCompraLinea(models.Model):
         poliza  = self.poliza_id
         config  = self.env['gt.compras.config'].sudo()._get_config(poliza.company_id)
 
+        if not config.cuenta_proveedores_id:
+            raise UserError(_('Configure la cuenta de Proveedores en Configuración GT.'))
+
         ref = '[NOTA CRÉDITO] %s | %s | UUID: %s' % (
             poliza.name, self.nombre_emisor, self.uuid)
         move_vals = {
@@ -537,12 +584,20 @@ class GtPolizaCompraLinea(models.Model):
             'ref':          ref,
             'journal_id':   poliza.journal_id.id,
             'gt_poliza_id': poliza.id,
-            'line_ids': [(0, 0, {
-                'account_id': self.cuenta_gasto_id.id,
-                'name':       _('Nota de Crédito - %s') % self.nombre_emisor,
-                'debit':      0.0,
-                'credit':     self.gran_total,
-            })],
+            'line_ids': [
+                (0, 0, {
+                    'account_id': self.cuenta_gasto_id.id,
+                    'name':       _('Nota de Crédito - %s') % self.nombre_emisor,
+                    'quantity':   1,
+                    'price_unit': self.gran_total,
+                    'tax_ids':    [(6, 0, [])],
+                }),
+                (0, 0, {
+                    'account_id': config.cuenta_proveedores_id.id,
+                    'name':       _('Nota de Crédito - Por pagar - %s') % self.nombre_emisor,
+                    'balance':    self.gran_total,
+                }),
+            ],
         }
         move = self.env['account.move'].create(move_vals)
         move.action_post()

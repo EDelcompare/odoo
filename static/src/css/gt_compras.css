@@ -1,0 +1,16 @@
+.o_form_view.o_gt_poliza_full_width .o_form_sheet_bg {
+    max-width: none !important;
+}
+
+/* Tabla de facturas: alto acotado con scroll propio, para que la barra
+   horizontal quede siempre cerca sin tener que bajar toda la tabla. */
+.o_field_widget[name="linea_ids"] .o_list_renderer {
+    max-height: 420px;
+    overflow: auto;
+}
+
+.o_field_widget[name="linea_ids"] .o_list_renderer thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}

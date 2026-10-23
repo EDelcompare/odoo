@@ -111,13 +111,14 @@ class GtWizardCargaXml(models.TransientModel):
                 # Crear la línea en la póliza
                 datos['poliza_id'] = self.poliza_id.id
                 datos['xml_original'] = xml_content.decode('utf-8')
-                linea_model.create(datos)
+                linea = linea_model.create(datos)
                 cargados += 1
                 resultados.append({
                     'nombre_archivo': nombre_xml,
                     'estado':        'ok',
                     'mensaje':       _('Cargado correctamente'),
                     'uuid':          uuid,
+                    'linea_id':      linea.id,
                 })
 
             except UserError as e:
@@ -180,3 +181,15 @@ class GtWizardCargaXmlResultado(models.TransientModel):
         ('error',      'Error'),
     ], string='Estado')
     mensaje        = fields.Char(string='Detalle')
+    linea_id       = fields.Many2one(
+        'gt.poliza.compra.linea', ondelete='cascade',
+        help="Línea que generó este resultado. Al quitar esta fila del "
+             "resultado también se elimina la factura ya cargada.")
+
+    def unlink(self):
+        lineas = self.mapped('linea_id')
+        res = super().unlink()
+        lineas.filtered(
+            lambda l: l.exists() and l.poliza_id.state == 'borrador'
+        ).unlink()
+        return res

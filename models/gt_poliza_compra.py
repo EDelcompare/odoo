@@ -244,7 +244,7 @@ class GtPolizaCompra(models.Model):
             if linea.tipo_documento == 'anulada':
                 # Factura anulada: se registra con impacto cero
                 linea._generar_asiento_anulada()
-            elif linea.tipo_documento == 'nota_credito':
+            elif linea.es_nota_credito:
                 linea._generar_asiento_nota_credito()
             else:
                 linea._generar_asiento_normal()
