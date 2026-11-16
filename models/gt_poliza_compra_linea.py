@@ -437,9 +437,8 @@ class GtPolizaCompraLinea(models.Model):
         if not partner:
             partner = self.env['res.partner'].create({
                 'name':         self.nombre_comercial or self.nombre_emisor,
+                # Odoo 20: is_company se calcula a partir del NIT (vat)
                 'vat':          self.nit_emisor,
-                'company_type': 'company',
-                'is_company':   True,
                 'supplier_rank': 1,
                 'comment': _('Creado automáticamente desde importación FEL SAT'),
             })
@@ -555,7 +554,7 @@ class GtPolizaCompraLinea(models.Model):
                 'account_id': self.cuenta_gasto_id.id if self.cuenta_gasto_id
                               else self.env['account.account'].search([
                                   ('account_type', 'like', 'expense'),
-                                  ('company_id', '=', self.company_id.id)
+                                  ('company_ids', 'in', self.company_id.id)
                               ], limit=1).id,
                 'name': _('FACTURA ANULADA - %s') % self.nombre_emisor,
                 'balance': 0.0,
@@ -643,5 +642,5 @@ class GtComprasConfig(models.Model):
         if not config:
             raise UserError(_(
                 'Configure las cuentas contables del módulo GT Compras FEL '
-                'en: Contabilidad → Configuración → Configuración GT Compras'))
+                'en: Compras FEL GT → Configuración → Cuentas Contables GT'))
         return config

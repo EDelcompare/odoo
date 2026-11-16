@@ -5,7 +5,6 @@
         <field name="model">gt.poliza.compra</field>
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">gt_compras_fel.reporte_libro_compras</field>
-        <field name="report_file">gt_compras_fel.reporte_libro_compras</field>
         <field name="binding_model_id" ref="model_gt_poliza_compra"/>
         <field name="binding_type">report</field>
         <field name="paperformat_id" ref="base.paperformat_us"/>
@@ -21,12 +20,12 @@
                         <div class="text-center mb-2">
                             <h4>REGISTRO DE COMPRAS</h4>
                             <p>
-                                <strong><t t-esc="poliza.company_id.name"/></strong><br/>
-                                NIT: <t t-esc="poliza.company_id.vat"/><br/>
+                                <strong><t t-out="poliza.company_id.name"/></strong><br/>
+                                NIT: <t t-out="poliza.company_id.vat"/><br/>
                                 Período:
-                                <t t-esc="dict(poliza._fields['periodo_mes'].selection).get(poliza.periodo_mes)"/>
-                                <t t-esc="poliza.periodo_anio"/> |
-                                Póliza: <strong><t t-esc="poliza.name"/></strong>
+                                <t t-out="dict(poliza._fields['periodo_mes'].selection).get(poliza.periodo_mes)"/>
+                                <t t-out="poliza.periodo_anio"/> |
+                                Póliza: <strong><t t-out="poliza.name"/></strong>
                             </p>
                         </div>
 
@@ -59,49 +58,49 @@
                                         if linea.es_anulada else
                                         'color:#856404;' if linea.es_nota_credito
                                         else ''}}">
-                                        <td><t t-esc="linea_index + 1"/></td>
-                                        <td><t t-esc="linea.fecha"/></td>
-                                        <td><t t-esc="linea.tipo_documento"/></td>
-                                        <td><t t-esc="linea.serie or ''"/></td>
-                                        <td><t t-esc="linea.numero_documento or ''"/></td>
-                                        <td><t t-esc="linea.nit_emisor"/></td>
-                                        <td><t t-esc="linea.nombre_emisor"/></td>
+                                        <td><t t-out="linea_index + 1"/></td>
+                                        <td><t t-out="linea.fecha"/></td>
+                                        <td><t t-out="linea.tipo_documento"/></td>
+                                        <td><t t-out="linea.serie or ''"/></td>
+                                        <td><t t-out="linea.numero_documento or ''"/></td>
+                                        <td><t t-out="linea.nit_emisor"/></td>
+                                        <td><t t-out="linea.nombre_emisor"/></td>
                                         <td class="text-right">
                                             <t t-if="linea.monto_bienes">
-                                                <t t-esc="'{:,.2f}'.format(linea.monto_bienes)"/>
+                                                <t t-out="'{:,.2f}'.format(linea.monto_bienes)"/>
                                             </t>
                                         </td>
                                         <td class="text-right">
                                             <t t-if="linea.monto_servicios">
-                                                <t t-esc="'{:,.2f}'.format(linea.monto_servicios)"/>
+                                                <t t-out="'{:,.2f}'.format(linea.monto_servicios)"/>
                                             </t>
                                         </td>
                                         <td class="text-right">
                                             <t t-if="linea.monto_combustible">
-                                                <t t-esc="'{:,.2f}'.format(linea.monto_combustible)"/>
+                                                <t t-out="'{:,.2f}'.format(linea.monto_combustible)"/>
                                             </t>
                                         </td>
                                         <td class="text-right">
                                             <t t-if="linea.monto_pequeno_contribuyente">
-                                                <t t-esc="'{:,.2f}'.format(linea.monto_pequeno_contribuyente)"/>
+                                                <t t-out="'{:,.2f}'.format(linea.monto_pequeno_contribuyente)"/>
                                             </t>
                                         </td>
                                         <td class="text-right">
                                             <t t-if="linea.monto_exento or linea.monto_idp">
-                                                <t t-esc="'{:,.2f}'.format(linea.monto_exento + linea.monto_idp)"/>
+                                                <t t-out="'{:,.2f}'.format(linea.monto_exento + linea.monto_idp)"/>
                                             </t>
                                         </td>
                                         <td class="text-right">
                                             <t t-if="linea.monto_iva">
-                                                <t t-esc="'{:,.2f}'.format(linea.monto_iva)"/>
+                                                <t t-out="'{:,.2f}'.format(linea.monto_iva)"/>
                                             </t>
                                         </td>
                                         <td class="text-right">
-                                            <t t-esc="'{:,.2f}'.format(linea.venta_neta + linea.monto_idp)"/>
+                                            <t t-out="'{:,.2f}'.format(linea.venta_neta + linea.monto_idp)"/>
                                         </td>
                                         <td class="text-right">
                                             <strong>
-                                                <t t-esc="'{:,.2f}'.format(linea.gran_total)"/>
+                                                <t t-out="'{:,.2f}'.format(linea.gran_total)"/>
                                             </strong>
                                         </td>
                                     </tr>
@@ -112,28 +111,28 @@
                                 <tr>
                                     <td colspan="7" class="text-right">TOTALES:</td>
                                     <td class="text-right">
-                                        <t t-esc="'{:,.2f}'.format(poliza.total_bienes)"/>
+                                        <t t-out="'{:,.2f}'.format(poliza.total_bienes)"/>
                                     </td>
                                     <td class="text-right">
-                                        <t t-esc="'{:,.2f}'.format(poliza.total_servicios)"/>
+                                        <t t-out="'{:,.2f}'.format(poliza.total_servicios)"/>
                                     </td>
                                     <td class="text-right">
-                                        <t t-esc="'{:,.2f}'.format(poliza.total_combustible)"/>
+                                        <t t-out="'{:,.2f}'.format(poliza.total_combustible)"/>
                                     </td>
                                     <td class="text-right">
-                                        <t t-esc="'{:,.2f}'.format(poliza.total_pequeno_contribuyente)"/>
+                                        <t t-out="'{:,.2f}'.format(poliza.total_pequeno_contribuyente)"/>
                                     </td>
                                     <td class="text-right">
-                                        <t t-esc="'{:,.2f}'.format(poliza.total_exentas + poliza.total_idp)"/>
+                                        <t t-out="'{:,.2f}'.format(poliza.total_exentas + poliza.total_idp)"/>
                                     </td>
                                     <td class="text-right">
-                                        <t t-esc="'{:,.2f}'.format(poliza.total_iva)"/>
+                                        <t t-out="'{:,.2f}'.format(poliza.total_iva)"/>
                                     </td>
                                     <td class="text-right">
-                                        <t t-esc="'{:,.2f}'.format(poliza.total_bienes + poliza.total_servicios + poliza.total_combustible + poliza.total_pequeno_contribuyente + poliza.total_exentas + poliza.total_idp)"/>
+                                        <t t-out="'{:,.2f}'.format(poliza.total_bienes + poliza.total_servicios + poliza.total_combustible + poliza.total_pequeno_contribuyente + poliza.total_exentas + poliza.total_idp)"/>
                                     </td>
                                     <td class="text-right">
-                                        <t t-esc="'{:,.2f}'.format(poliza.gran_total)"/>
+                                        <t t-out="'{:,.2f}'.format(poliza.gran_total)"/>
                                     </td>
                                 </tr>
                             </tfoot>
@@ -152,33 +151,33 @@
                                     <tbody>
                                         <tr><td>Total Bienes</td>
                                             <td class="text-right">
-                                                Q <t t-esc="'{:,.2f}'.format(poliza.total_bienes)"/>
+                                                Q <t t-out="'{:,.2f}'.format(poliza.total_bienes)"/>
                                             </td></tr>
                                         <tr><td>Total Servicios</td>
                                             <td class="text-right">
-                                                Q <t t-esc="'{:,.2f}'.format(poliza.total_servicios)"/>
+                                                Q <t t-out="'{:,.2f}'.format(poliza.total_servicios)"/>
                                             </td></tr>
                                         <tr><td>Total Combustible</td>
                                             <td class="text-right">
-                                                Q <t t-esc="'{:,.2f}'.format(poliza.total_combustible)"/>
+                                                Q <t t-out="'{:,.2f}'.format(poliza.total_combustible)"/>
                                             </td></tr>
                                         <tr><td>Total Pequeño Contribuyente</td>
                                             <td class="text-right">
-                                                Q <t t-esc="'{:,.2f}'.format(poliza.total_pequeno_contribuyente)"/>
+                                                Q <t t-out="'{:,.2f}'.format(poliza.total_pequeno_contribuyente)"/>
                                             </td></tr>
                                         <tr><td>Total Exentas (incl. IDP)</td>
                                             <td class="text-right">
-                                                Q <t t-esc="'{:,.2f}'.format(poliza.total_exentas + poliza.total_idp)"/>
+                                                Q <t t-out="'{:,.2f}'.format(poliza.total_exentas + poliza.total_idp)"/>
                                             </td></tr>
                                         <tr style="font-weight:bold;">
                                             <td>Total IVA Crédito Fiscal</td>
                                             <td class="text-right">
-                                                Q <t t-esc="'{:,.2f}'.format(poliza.total_iva)"/>
+                                                Q <t t-out="'{:,.2f}'.format(poliza.total_iva)"/>
                                             </td></tr>
                                         <tr style="font-weight:bold;background:#e9ecef;">
                                             <td>GRAN TOTAL COMPRAS</td>
                                             <td class="text-right">
-                                                Q <t t-esc="'{:,.2f}'.format(poliza.gran_total)"/>
+                                                Q <t t-out="'{:,.2f}'.format(poliza.gran_total)"/>
                                             </td></tr>
                                     </tbody>
                                 </table>
@@ -187,8 +186,8 @@
 
                         <p class="text-muted" style="font-size:7px; margin-top:10px;">
                             Generado por módulo GT Compras FEL v19 |
-                            <t t-esc="poliza.company_id.name"/> |
-                            Póliza: <t t-esc="poliza.name"/>
+                            <t t-out="poliza.company_id.name"/> |
+                            Póliza: <t t-out="poliza.name"/>
                         </p>
                     </div>
                 </t>

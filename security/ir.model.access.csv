@@ -1,8 +1,0 @@
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_gt_poliza_compra_user,gt.poliza.compra user,model_gt_poliza_compra,account.group_account_user,1,1,1,0
-access_gt_poliza_compra_manager,gt.poliza.compra manager,model_gt_poliza_compra,account.group_account_manager,1,1,1,1
-access_gt_poliza_linea_user,gt.poliza.compra.linea user,model_gt_poliza_compra_linea,account.group_account_user,1,1,1,0
-access_gt_poliza_linea_manager,gt.poliza.compra.linea manager,model_gt_poliza_compra_linea,account.group_account_manager,1,1,1,1
-access_gt_compras_config,gt.compras.config,model_gt_compras_config,account.group_account_manager,1,1,1,1
-access_gt_wizard_carga_xml,gt.wizard.carga.xml,model_gt_wizard_carga_xml,account.group_account_user,1,1,1,1
-access_gt_wizard_resultado,gt.wizard.carga.xml.resultado,model_gt_wizard_carga_xml_resultado,account.group_account_user,1,1,1,1

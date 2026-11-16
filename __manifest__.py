@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Compras FEL Guatemala',
-    'version': '19.0.1.0.0',
+    'version': '20.0.1.0.0',
     'category': 'Accounting/Guatemala',
     'summary': 'Registro de compras FEL con importación XML del SAT Guatemala',
     'description': """
@@ -20,7 +20,7 @@
     'license': 'LGPL-3',
     'depends': ['account', 'mail'],
     'data': [
-        'security/ir.model.access.csv',
+        'security/ir.access.csv',
         'data/gt_compras_data.xml',
         'views/gt_poliza_compra_views.xml',
         'views/gt_compras_menu.xml',

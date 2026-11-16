@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import base64
 import zipfile
 import io
 from odoo import models, fields, api, _
@@ -59,7 +58,8 @@ class GtWizardCargaXml(models.TransientModel):
         if not self.archivo:
             raise UserError(_('Seleccione un archivo para cargar.'))
 
-        contenido = base64.b64decode(self.archivo)
+        # Odoo 20: el campo Binary devuelve un BinaryValue con los bytes ya decodificados
+        contenido = self.archivo.content
         linea_model = self.env['gt.poliza.compra.linea']
 
         archivos_xml = []  # lista de (nombre, contenido_xml)

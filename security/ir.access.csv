@@ -1,0 +1,8 @@
+id,name,model_id,group_id/id,operation,domain
+access_gt_poliza_compra_user,gt.poliza.compra user,gt.poliza.compra,account.group_account_user,cru,
+access_gt_poliza_compra_manager,gt.poliza.compra manager,gt.poliza.compra,account.group_account_manager,crud,
+access_gt_poliza_linea_user,gt.poliza.compra.linea user,gt.poliza.compra.linea,account.group_account_user,cru,
+access_gt_poliza_linea_manager,gt.poliza.compra.linea manager,gt.poliza.compra.linea,account.group_account_manager,crud,
+access_gt_compras_config,gt.compras.config,gt.compras.config,account.group_account_manager,crud,
+access_gt_wizard_carga_xml,gt.wizard.carga.xml,gt.wizard.carga.xml,account.group_account_user,crud,
+access_gt_wizard_resultado,gt.wizard.carga.xml.resultado,gt.wizard.carga.xml.resultado,account.group_account_user,crud,
